@@ -1,3 +1,4 @@
 out
 chirpy
 tests.http
+.env
