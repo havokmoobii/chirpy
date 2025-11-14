@@ -4,20 +4,25 @@ import (
 	"net/http"
 	"encoding/json"
 	"time"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/havokmoobii/chirpy/internal/database"
+	"github.com/havokmoobii/chirpy/internal/auth"
 )
+
+type User struct {
+	ID             uuid.UUID `json:"id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	Email          string    `json:"email"`
+}
 
 func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-        Email string `json:"email"`
+        Email    string `json:"email"`
+		Password string `json:"password"`
     }
-	type returnVals struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
-	}
 
     decoder := json.NewDecoder(r.Body)
     params := parameters{}
@@ -27,13 +32,26 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		return
     }
 
-	user, err := cfg.db.CreateUser(r.Context(), params.Email)
+	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't hash password", err)
+		return
+    }
+
+	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+		Email:    params.Email,
+		HashedPassword: hashedPassword,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+			respondWithError(w, http.StatusBadRequest, "user already exists", err)
+			return
+		}
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create user", err)
 		return
 	}
 
-	respondWithJSON(w, http.StatusCreated, returnVals{
+	respondWithJSON(w, http.StatusCreated, User{
 		ID:        user.ID,
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
