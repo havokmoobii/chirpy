@@ -3,6 +3,8 @@ package auth
 import(
 	"time"
 	"log"
+	"net/http"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/golang-jwt/jwt/v5"
@@ -50,4 +52,19 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	}
 
 	return userID, nil 
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	bearer, ok := headers["Authorization"]
+	if !ok {
+		return "", errors.New("Missing Authorization header key")
+	}
+	malformedErr := errors.New("Malformed Authorization header value. Expecting: bearer <token>")
+	if len(bearer) <= 1{
+		return "", malformedErr
+	}
+	if bearer[0] != "bearer" {
+		return "", malformedErr
+	}
+	return bearer[1], nil
 }

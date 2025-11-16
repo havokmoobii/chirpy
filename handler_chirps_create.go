@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/havokmoobii/chirpy/internal/database"
+	"github.com/havokmoobii/chirpy/internal/auth"
 )
 
 type Chirp struct {
@@ -21,7 +22,6 @@ type Chirp struct {
 func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
     	Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
     }
 
     decoder := json.NewDecoder(r.Body)
@@ -31,6 +31,18 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
     }
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusForbidden, "Couldn't extract token from header", err)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondWithError(w, http.StatusForbidden, "Couldn't validate JWT", err)
+		return
+	}
 
 	const maxChirpLength = 140
 	if len(params.Body) > maxChirpLength {
@@ -47,7 +59,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,
-		UserID: params.UserID,
+		UserID: userID,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't create chirp", err)
