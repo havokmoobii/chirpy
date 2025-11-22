@@ -34,13 +34,13 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 
 	token, err := auth.GetBearerToken(r.Header)
 	if err != nil {
-		respondWithError(w, http.StatusForbidden, "Couldn't extract token from header", err)
+		respondWithError(w, http.StatusUnauthorized, "Couldn't extract token from header", err)
 		return
 	}
 
 	userID, err := auth.ValidateJWT(token, cfg.secret)
 	if err != nil {
-		respondWithError(w, http.StatusForbidden, "Couldn't validate JWT", err)
+		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT", err)
 		return
 	}
 

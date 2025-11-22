@@ -5,6 +5,7 @@ import(
 	"log"
 	"net/http"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/golang-jwt/jwt/v5"
@@ -59,12 +60,16 @@ func GetBearerToken(headers http.Header) (string, error) {
 	if !ok {
 		return "", errors.New("Missing Authorization header key")
 	}
-	malformedErr := errors.New("Malformed Authorization header value. Expecting: bearer <token>")
-	if len(bearer) <= 1{
+	malformedErr := errors.New("Malformed Authorization header value. Expecting: Bearer <token>")
+	if len(bearer) == 0 {
 		return "", malformedErr
 	}
-	if bearer[0] != "bearer" {
+	split := strings.Split(bearer[0], " ")
+	if len(split) != 2 {
+	return "", malformedErr
+	}
+	if split[0] != "Bearer" {
 		return "", malformedErr
 	}
-	return bearer[1], nil
+	return split[1], nil
 }
