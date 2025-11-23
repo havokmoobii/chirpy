@@ -1,22 +1,22 @@
-package main
+package api
 
 import(
 	"net/http"
 	"log"
 )
 
-func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HandlerReset(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
-	if cfg.platform != "dev" {
+	if cfg.Platform != "dev" {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte("Reset is only allowed in dev environment."))
 		return
 	}
 
-	cfg.fileserverHits.Store(0)
+	cfg.FileserverHits.Store(0)
 
-	err := cfg.db.ResetUsers(r.Context())
+	err := cfg.DB.ResetUsers(r.Context())
 	if err != nil {
 		log.Printf("Error resetting users: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)

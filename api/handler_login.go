@@ -1,4 +1,4 @@
-package main
+package api
 
 import(
 	"net/http"
@@ -12,7 +12,7 @@ import(
 	"github.com/havokmoobii/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HandlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Email            string  `json:"email"`
 		Password         string  `json:"password"`
@@ -34,7 +34,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := cfg.db.GetUser(r.Context(), params.Email)
+	user, err := cfg.DB.GetUser(r.Context(), params.Email)
 	if err != nil {
 		if strings.Contains(err.Error(), "no rows in result set") {
 			respondWithError(w, http.StatusUnauthorized, "Incorrect email or password", err)
@@ -56,7 +56,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	seconds, _ := time.ParseDuration(strconv.Itoa(3600) + "s")
 
-	accessToken, err := auth.MakeJWT(user.ID, cfg.secret, seconds)
+	accessToken, err := auth.MakeJWT(user.ID, cfg.Secret, seconds)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't make JWT", err)
 		return
@@ -64,7 +64,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	refreshToken := auth.MakeRefreshToken()
 
-	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+	_, err = cfg.DB.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
 		Token:  refreshToken,
 		UserID: user.ID,
 	})

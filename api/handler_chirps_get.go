@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"net/http"
@@ -6,14 +6,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HandlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	parsed, err := uuid.Parse(r.PathValue("chirpID"))
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Couldn't parse request chirp_id", err)
 		return
 	}
 
-	chirp, err := cfg.db.GetChirp(r.Context(), parsed)
+	chirp, err := cfg.DB.GetChirp(r.Context(), parsed)
 	if err != nil {
 		respondWithError(w, http.StatusNotFound, "Couldn't get chirp", err)
 		return
@@ -28,8 +28,8 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
-	dbChirps, err := cfg.db.GetChirps(r.Context())
+func (cfg *APIConfig) HandlerChirpsRetrieve(w http.ResponseWriter, r *http.Request) {
+	dbChirps, err := cfg.DB.GetChirps(r.Context())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't get chirps", err)
 		return

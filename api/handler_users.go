@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"net/http"
@@ -18,7 +18,7 @@ type User struct {
 	Email          string    `json:"email"`
 }
 
-func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HandlerUsersCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
         Email    string `json:"email"`
 		Password string `json:"password"`
@@ -38,7 +38,7 @@ func (cfg *apiConfig) handlerUsersCreate(w http.ResponseWriter, r *http.Request)
 		return
     }
 
-	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
+	user, err := cfg.DB.CreateUser(r.Context(), database.CreateUserParams{
 		Email:    params.Email,
 		HashedPassword: hashedPassword,
 	})

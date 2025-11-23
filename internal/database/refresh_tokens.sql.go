@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -56,16 +57,16 @@ func (q *Queries) GetRefreshTokenExpired(ctx context.Context, token string) (boo
 }
 
 const getRefreshTokenRevoked = `-- name: GetRefreshTokenRevoked :one
-SELECT revoked_at IS NULL
+SELECT revoked_at
 FROM refresh_tokens
 WHERE token = $1
 `
 
-func (q *Queries) GetRefreshTokenRevoked(ctx context.Context, token string) (interface{}, error) {
+func (q *Queries) GetRefreshTokenRevoked(ctx context.Context, token string) (sql.NullTime, error) {
 	row := q.db.QueryRowContext(ctx, getRefreshTokenRevoked, token)
-	var column_1 interface{}
-	err := row.Scan(&column_1)
-	return column_1, err
+	var revoked_at sql.NullTime
+	err := row.Scan(&revoked_at)
+	return revoked_at, err
 }
 
 const getUserFromRefreshToken = `-- name: GetUserFromRefreshToken :one
@@ -78,4 +79,15 @@ func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (uu
 	var user_id uuid.UUID
 	err := row.Scan(&user_id)
 	return user_id, err
+}
+
+const revokeRefreshToken = `-- name: RevokeRefreshToken :exec
+UPDATE refresh_tokens
+SET updated_at = NOW(), revoked_at = NOW()
+WHERE token = $1
+`
+
+func (q *Queries) RevokeRefreshToken(ctx context.Context, token string) error {
+	_, err := q.db.ExecContext(ctx, revokeRefreshToken, token)
+	return err
 }

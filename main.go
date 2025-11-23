@@ -2,22 +2,16 @@ package main
 
 import (
 	"os"
-	"database/sql"
 	"log"
 	"net/http"
 	"sync/atomic"
+	"database/sql"
 
+	"github.com/havokmoobii/chirpy/api"
 	"github.com/havokmoobii/chirpy/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
-
-type apiConfig struct {
-	fileserverHits atomic.Int32
-	db             *database.Queries
-	platform       string
-	secret         string
-}
 
 func main() {
 	const filepathRoot = "./public"
@@ -36,30 +30,30 @@ func main() {
 	}
 	dbQueries := database.New(db)
 
-	apiCfg := apiConfig{
-		fileserverHits: atomic.Int32{},
-		db:             dbQueries,
-		platform:       os.Getenv("PLATFORM"),
-		secret:         os.Getenv("SECRET"),
+	apiCfg := api.APIConfig{
+		FileserverHits: atomic.Int32{},
+		DB:             dbQueries,
+		Platform:       os.Getenv("PLATFORM"),
+		Secret:         os.Getenv("SECRET"),
 	}
 
 	mux := http.NewServeMux()
 
-	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", (http.FileServer(http.Dir(filepathRoot)))))
+	fsHandler := apiCfg.MiddlewareMetricsInc(http.StripPrefix("/app", (http.FileServer(http.Dir(filepathRoot)))))
 	mux.Handle("/app/", fsHandler)
 
-	mux.HandleFunc("GET /api/healthz", handlerReadiness)
-	mux.HandleFunc("POST /api/users", apiCfg.handlerUsersCreate)
-	mux.HandleFunc("POST /api/login", apiCfg.handlerLogin)
-	mux.HandleFunc("POST /api/refresh", apiCfg.handlerRefresh)
-	mux.HandleFunc("POST /api/revoke", apiCfg.handlerRevoke)
-	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
-	mux.HandleFunc("GET /api/chirps", apiCfg.handlerChirpsRetrieve)
-	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.handlerChirpsGet)
+	mux.HandleFunc("GET /api/healthz", api.HandlerReadiness)
+	mux.HandleFunc("POST /api/users", apiCfg.HandlerUsersCreate)
+	mux.HandleFunc("POST /api/login", apiCfg.HandlerLogin)
+	mux.HandleFunc("POST /api/refresh", apiCfg.HandlerRefresh)
+	mux.HandleFunc("POST /api/revoke", apiCfg.HandlerRevoke)
+	mux.HandleFunc("POST /api/chirps", apiCfg.HandlerChirpsCreate)
+	mux.HandleFunc("GET /api/chirps", apiCfg.HandlerChirpsRetrieve)
+	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.HandlerChirpsGet)
 
 
-	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
-	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.HandlerMetrics)
+	mux.HandleFunc("POST /admin/reset", apiCfg.HandlerReset)
 	
 	srv := &http.Server{
 		Addr:    ":" + port,

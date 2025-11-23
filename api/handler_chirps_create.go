@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"net/http"
@@ -19,7 +19,7 @@ type Chirp struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HandlerChirpsCreate(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
     	Body   string    `json:"body"`
     }
@@ -38,7 +38,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userID, err := auth.ValidateJWT(token, cfg.secret)
+	userID, err := auth.ValidateJWT(token, cfg.Secret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT", err)
 		return
@@ -57,7 +57,7 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	}
 	cleanedBody := cleanResponseBody(params.Body, badWords)
 
-	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
+	chirp, err := cfg.DB.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,
 		UserID: userID,
 	})

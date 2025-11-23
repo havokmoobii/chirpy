@@ -1,17 +1,14 @@
-package main
+package api
 
 import (
 	"net/http"
 	"time"
 	"strconv"
 
-
-	"fmt"
-
 	"github.com/havokmoobii/chirpy/internal/auth"
 )
 
-func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
+func (cfg *APIConfig) HandlerRefresh(w http.ResponseWriter, r *http.Request) {
 	type returnVals struct {
 		Token          string    `json:"token"`
 	}
@@ -22,23 +19,27 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokenExpired, err := cfg.db.GetRefreshTokenExpired(r.Context(), token)
-	if err != nil || tokenExpired {
-		respondWithError(w, http.StatusUnauthorized, "Couldn't get user ID from token", err)
-		return
-	}
-
-	tokenRevoked, err := cfg.db.GetRefreshTokenRevoked(r.Context(), token)
+	tokenExpired, err := cfg.DB.GetRefreshTokenExpired(r.Context(), token)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't get user ID from token", err)
 		return
 	}
+	if tokenExpired {
+		respondWithError(w, http.StatusUnauthorized, "Refresh token has expired", err)
+		return
+	}
 
-	// Refactor tokenRevoked. Need to get whether or not the value is NULL.
+	tokenRevoked, err := cfg.DB.GetRefreshTokenRevoked(r.Context(), token)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't get user ID from token", err)
+		return
+	}
+	if tokenRevoked.Valid {
+		respondWithError(w, http.StatusUnauthorized, "Refresh token has been revoked", err)
+		return
+	}
 
-	fmt.Println(tokenRevoked)
-
-	userID, err := cfg.db.GetUserFromRefreshToken(r.Context(), token)
+	userID, err := cfg.DB.GetUserFromRefreshToken(r.Context(), token)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Couldn't get user ID from token", err)
 		return
@@ -46,7 +47,7 @@ func (cfg *apiConfig) handlerRefresh(w http.ResponseWriter, r *http.Request) {
 
 	seconds, _ := time.ParseDuration(strconv.Itoa(3600) + "s")
 
-	accessToken, err := auth.MakeJWT(userID, cfg.secret, seconds)
+	accessToken, err := auth.MakeJWT(userID, cfg.Secret, seconds)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't make JWT", err)
 		return

@@ -36,19 +36,16 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 	return []byte(tokenSecret), nil})
 	if err != nil {
-		log.Printf("%s", err)
 		return uuid.Nil, err
 	}
 
 	subject, err := token.Claims.GetSubject()
 	if err != nil {
-		log.Printf("%s", err)
 		return uuid.Nil, err
 	}
 
 	userID, err := uuid.Parse(subject)
 	if err != nil {
-		log.Printf("%s", err)
 		return uuid.Nil, err
 	}
 
