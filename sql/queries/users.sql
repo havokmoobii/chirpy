@@ -7,7 +7,7 @@ VALUES (
     $1,
     $2
 )
-RETURNING id, created_at, updated_at, email;
+RETURNING id, created_at, updated_at, email, is_chirpy_red;
 
 -- name: ResetUsers :exec
 DELETE FROM users;
@@ -20,7 +20,7 @@ WHERE email = $1;
 UPDATE users
 SET updated_at = NOW(), email = $2, hashed_password = $3
 WHERE id = $1
-RETURNING id, created_at, updated_at, email;
+RETURNING id, created_at, updated_at, email, is_chirpy_red;
 
 -- name: UpgradeUser :exec
 UPDATE users
