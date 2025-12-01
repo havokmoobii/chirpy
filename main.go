@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"database/sql"
 
-	"github.com/havokmoobii/chirpy/api"
+	"github.com/havokmoobii/chirpy/api/handlers"
 	"github.com/havokmoobii/chirpy/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -53,6 +53,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps/{chirpID}", apiCfg.HandlerChirpsGet)
 	mux.HandleFunc("DELETE /api/chirps/{chirpID}", apiCfg.HandlerChirpsDelete)
 
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.HandlerUsersUpgradeToRed)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.HandlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.HandlerReset)
