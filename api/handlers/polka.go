@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/havokmoobii/chirpy/internal/auth"
 )
 
 func (cfg *APIConfig) HandlerUsersUpgradeToRed(w http.ResponseWriter, r *http.Request) {
@@ -16,9 +17,20 @@ func (cfg *APIConfig) HandlerUsersUpgradeToRed(w http.ResponseWriter, r *http.Re
 		} `json:"data"`
 	}
 
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't extract API key from header", err)
+		return
+	}
+
+	if apiKey != cfg.PolkaKey {
+		respondWithError(w, http.StatusUnauthorized, "Invalid API Key", nil)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters", err)
 		return
